@@ -1,98 +1,52 @@
 
-const STORAGE_KEY = "bloodpressure_entries";
+const KEY="bp";
 
-function getEntries() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+function get(){return JSON.parse(localStorage.getItem(KEY)||"[]")}
+function set(v){localStorage.setItem(KEY,JSON.stringify(v))}
+
+function save(){
+const d=get();
+d.unshift({
+date:new Date().toLocaleString(),
+sys:sys.value,
+dia:dia.value,
+pulse:pulse.value
+});
+set(d);
+render();
 }
 
-function saveEntries(entries) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+function render(){
+const d=get();
+t.innerHTML=d.map(x=>`<tr><td>${x.date}</td><td>${x.sys}</td><td>${x.dia}</td><td>${x.pulse}</td></tr>`).join("");
+
+if(window.chart)chart.destroy();
+chart=new Chart(c,{type:"line",data:{
+labels:d.map(x=>x.date).reverse(),
+datasets:[
+{label:"SYS",data:d.map(x=>x.sys).reverse()},
+{label:"DIA",data:d.map(x=>x.dia).reverse()}
+]}})
 }
 
-function saveEntry() {
-  const sys = document.getElementById("sys").value;
-  const dia = document.getElementById("dia").value;
-  const pulse = document.getElementById("pulse").value;
-
-  if (!sys || !dia || !pulse) {
-    alert("Bitte alle Felder ausfüllen.");
-    return;
-  }
-
-  const entries = getEntries();
-
-  entries.unshift({
-    date: new Date().toLocaleString("de-DE"),
-    sys,
-    dia,
-    pulse
-  });
-
-  saveEntries(entries);
-
-  document.getElementById("sys").value = "";
-  document.getElementById("dia").value = "";
-  document.getElementById("pulse").value = "";
-
-  renderEntries();
-  renderChart();
+function exportCSV(){
+const d=get();
+let csv="date,sys,dia,pulse\n"+d.map(x=>`${x.date},${x.sys},${x.dia},${x.pulse}`).join("\n");
+const a=document.createElement("a");
+a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+a.download="blutdruck.csv";
+a.click();
 }
 
-function renderEntries() {
-  const tbody = document.getElementById("entries");
-  const entries = getEntries();
-
-  tbody.innerHTML = "";
-
-  entries.forEach(entry => {
-    const row = `
-      <tr>
-        <td>${entry.date}</td>
-        <td>${entry.sys}</td>
-        <td>${entry.dia}</td>
-        <td>${entry.pulse}</td>
-      </tr>
-    `;
-    tbody.innerHTML += row;
-  });
+function exportPDF(){
+const {jsPDF}=window.jspdf;
+const doc=new jsPDF();
+let y=10;
+get().forEach(x=>{
+doc.text(`${x.date} | ${x.sys}/${x.dia} | ${x.pulse}`,10,y);
+y+=8;
+});
+doc.save("blutdruck.pdf");
 }
 
-let chart;
-
-function renderChart() {
-  const entries = getEntries().slice().reverse();
-
-  const labels = entries.map(e => e.date);
-  const sysData = entries.map(e => e.sys);
-  const diaData = entries.map(e => e.dia);
-
-  const ctx = document.getElementById("chart");
-
-  if (chart) {
-    chart.destroy();
-  }
-
-  chart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "Systolisch",
-          data: sysData
-        },
-        {
-          label: "Diastolisch",
-          data: diaData
-        }
-      ]
-    }
-  });
-}
-
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js");
-}
-
-renderEntries();
-renderChart();
+render();

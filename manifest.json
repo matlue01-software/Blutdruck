@@ -1,16 +1,7 @@
 
 {
-  "name": "Blutdruck Tracker",
-  "short_name": "Blutdruck",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
-  "icons": [
-    {
-      "src": "icon.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    }
-  ]
+"name":"Blutdruck",
+"short_name":"BP",
+"start_url":"index.html",
+"display":"standalone"
 }
